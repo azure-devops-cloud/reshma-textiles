@@ -66,6 +66,24 @@
 <p id="adminStatus" class="form-status" aria-live="polite">Loading enquiries…</p><div id="enquiryList" class="enquiry-list"></div>
 <p class="privacy-note">Customer contact details are visible only to accounts with the admin role. The database enforces this access rule.</p>
 </section>
+<section class="admin-products section" id="productManager" hidden>
+  <div class="admin-top"><div><p class="eyebrow">RESHMA TEAM · CATALOGUE CONTROL</p><h2>Product <em>studio.</em></h2><p class="section-desc">Add lungi designs, update prices and choose which products appear publicly.</p></div><button class="btn btn-dark" id="refreshProducts" type="button">Refresh products ↻</button></div>
+  <form id="productForm" class="product-admin-form">
+    <input type="hidden" name="id">
+    <label>Product name<input name="name" required maxlength="120" placeholder="e.g. Classic Checks Lungi"></label>
+    <label>SKU / product code<input name="sku" maxlength="60" placeholder="Optional"></label>
+    <label>Fabric<input name="fabric" maxlength="100" placeholder="e.g. Cotton"></label>
+    <label>Design / pattern<input name="design" maxlength="120" placeholder="e.g. Checks, stripes"></label>
+    <label class="wide">Description<textarea name="description" rows="2" maxlength="1000" placeholder="Product details and comfort features"></textarea></label>
+    <label class="wide">Product image URL<input name="image_url" type="url" placeholder="https://..."></label>
+    <label>Retail price (₹)<input name="retail_price" type="number" min="0" step="0.01" required value="0"></label>
+    <label>Wholesale price (₹)<input name="wholesale_price" type="number" min="0" step="0.01" required value="0"></label>
+    <label>Minimum wholesale quantity<input name="min_wholesale_qty" type="number" min="1" step="1" required value="10"></label>
+    <label class="publish-toggle"><input name="is_active" type="checkbox"> Publish on website</label>
+    <div class="product-form-actions wide"><button class="btn btn-dark" type="submit" id="saveProductBtn">Save product</button><button class="text-link" type="button" id="cancelProductEdit" hidden>Cancel edit</button><span id="productAdminStatus" class="form-status" aria-live="polite"></span></div>
+  </form>
+  <div id="adminProductList" class="admin-product-list"></div>
+</section>
 <footer><a class="brand footer-brand" href="#"><span class="brand-mark">R<span>T</span></span><span class="brand-copy"><strong>RESHMA</strong><small>TEXTILES · WOVEN FOR EVERYDAY</small></span></a><span class="footer-copy">© <span id="year"></span> RESHMA TEXTILES. ALL RIGHTS RESERVED.</span><a class="footer-top" href="#">BACK TO TOP ↑</a></footer>
 <dialog id="accountDialog"><form method="dialog" class="dialog-close"><button aria-label="Close">×</button></form><p class="eyebrow">YOUR RESHMA ACCOUNT</p><h2 id="authTitle">Sign in</h2><form id="authForm" class="auth-form"><label>Email<input type="email" name="email" required placeholder="you@example.com"></label><label>Password<input type="password" name="password" required minlength="6" placeholder="At least 6 characters"></label><button class="btn btn-dark" type="submit" id="authSubmit">Sign in</button></form><button id="authToggle" class="text-link">New here? Create an account</button><p id="authStatus" class="form-status" aria-live="polite"></p><button id="signOutBtn" class="text-link" type="button" hidden>Sign out</button></dialog>
 <script>window.RESHMA_CONFIG={supabaseUrl:"https://nxsebszsdqcjrrhlkoqc.supabase.co",supabasePublishableKey:"sb_publishable_TXA4Ub-hNhv86yRIm8os4Q_9BIIgfYJ"};</script>
