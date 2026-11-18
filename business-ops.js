@@ -35,7 +35,7 @@ if(cfg.supabaseUrl&&cfg.supabasePublishableKey){
   $("#issueBatch").innerHTML=options(batches.filter(b=>["planned","in_progress"].includes(b.status)),b=>b.batch_number);
   $("#issueMaterial").innerHTML=options(materials,m=>m.name+" · "+m.current_stock+" "+m.unit);
   $("#batchProduct").innerHTML=options(products,p=>p.name);$("#batchVariant").innerHTML=options(variants,v=>(v.sku||v.id.slice(0,8))+" · "+(v.color||"")+"/"+(v.size||"")+" · stock "+v.stock_qty);
-  $("#completeBatch").innerHTML=options(batches.filter(b=>["planned","in_progress","quality_check"].includes(b.status)),b=>b.batch_number);
+  $("#completeBatch").innerHTML=options(batches.filter(b=>["planned","in_progress","quality_check"].includes(b.status)),b=>b.batch_number);\n  $("#costBatch").innerHTML=options(batches.filter(b=>["planned","in_progress","quality_check"].includes(b.status)),b=>b.batch_number);\n  $("#invoiceCustomer").innerHTML='<option value="">Use customer name below</option>'+options(customers,c=>c.name);
   $("#invoiceVariant").innerHTML=options(variants,v=>(v.sku||v.id.slice(0,8))+" · "+(products.find(p=>p.id===v.product_id)?.name||"Product")+" · stock "+v.stock_qty);
   $("#customerType").value="retail";
  }
