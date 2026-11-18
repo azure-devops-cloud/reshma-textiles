@@ -55,7 +55,7 @@ document.querySelector("#signOutBtn").addEventListener("click",async()=>{
 
 const productForm=document.querySelector("#productForm"),adminProductList=document.querySelector("#adminProductList"),productAdminStatus=document.querySelector("#productAdminStatus");
 let adminProducts=[];
-function slugify(v){return String(v||"").toLowerCase().normalize("NFKD").replace(/[\\u0300-\\u036f]/g,"").replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"")}
+function slugify(v){return String(v||"").toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"")}
 async function loadAdminProducts(){
  if(!adminReady)return;
  productAdminStatus.textContent="Loading products…";
