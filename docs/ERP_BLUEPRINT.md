@@ -102,3 +102,7 @@ The precise in-house vs outsourced stages, stage sequence, job-work partners, co
 - Drafts do not affect stock or financial reports.
 - Reports reconcile to posted ledgers.
 - Empty database states render clearly without invented records.
+
+
+## Application access model
+The application is a private ERP PWA, not a public storefront. The root route presents owner sign-in. The initial account is the owner/admin; supplier, customer and employee records do not imply login accounts. Future staff roles are a separate phase after workflows and permissions are agreed. No public catalogue, shopping cart or public enquiry intake is in scope.
