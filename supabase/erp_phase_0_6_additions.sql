@@ -230,3 +230,57 @@ select
 grant select on public.v_erp_finance_summary to authenticated;
 
 commit;
+
+-- Security hardening: audit records are read-only for application users.
+create or replace function private.audit_business_row()
+returns trigger
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  v_new jsonb;
+  v_old jsonb;
+  v_id uuid;
+  v_fields text[];
+begin
+  if tg_op = 'DELETE' then
+    v_old := to_jsonb(old);
+    v_id := (v_old ->> 'id')::uuid;
+    select coalesce(array_agg(k.field order by k.field), '{}') into v_fields from jsonb_object_keys(v_old) as k(field);
+  elsif tg_op = 'INSERT' then
+    v_new := to_jsonb(new);
+    v_id := (v_new ->> 'id')::uuid;
+    select coalesce(array_agg(k.field order by k.field), '{}') into v_fields from jsonb_object_keys(v_new) as k(field);
+  else
+    v_new := to_jsonb(new);
+    v_old := to_jsonb(old);
+    v_id := (v_new ->> 'id')::uuid;
+    select coalesce(array_agg(e.key order by e.key), '{}') into v_fields
+      from jsonb_each(v_new) e
+      where v_old -> e.key is distinct from e.value;
+  end if;
+  insert into public.erp_audit_events(event_type, entity_name, entity_id, actor_id, changed_fields)
+  values (lower(tg_op), tg_table_name, v_id, auth.uid(), v_fields);
+  if tg_op = 'DELETE' then return old; else return new; end if;
+end;
+$$;
+drop policy if exists "Admins manage erp_audit_events" on public.erp_audit_events;
+create policy "Admins view audit events" on public.erp_audit_events for select to authenticated using ((select private.is_admin()));
+revoke insert, update, delete on public.erp_audit_events from authenticated, anon;
+grant select on public.erp_audit_events to authenticated;
+
+drop trigger if exists audit_purchase_orders on public.purchase_orders;
+create trigger audit_purchase_orders after insert or update or delete on public.purchase_orders for each row execute function private.audit_business_row();
+drop trigger if exists audit_goods_receipts on public.goods_receipts;
+create trigger audit_goods_receipts after insert or update or delete on public.goods_receipts for each row execute function private.audit_business_row();
+drop trigger if exists audit_production_batches on public.production_batches;
+create trigger audit_production_batches after insert or update or delete on public.production_batches for each row execute function private.audit_business_row();
+drop trigger if exists audit_sales_invoices on public.sales_invoices;
+create trigger audit_sales_invoices after insert or update or delete on public.sales_invoices for each row execute function private.audit_business_row();
+drop trigger if exists audit_sales_invoice_payments on public.sales_invoice_payments;
+create trigger audit_sales_invoice_payments after insert or update or delete on public.sales_invoice_payments for each row execute function private.audit_business_row();
+drop trigger if exists audit_raw_material_movements on public.raw_material_movements;
+create trigger audit_raw_material_movements after insert or update or delete on public.raw_material_movements for each row execute function private.audit_business_row();
+drop trigger if exists audit_inventory_movements on public.inventory_movements;
+create trigger audit_inventory_movements after insert or update or delete on public.inventory_movements for each row execute function private.audit_business_row();
