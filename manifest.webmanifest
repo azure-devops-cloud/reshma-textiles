@@ -1,0 +1,20 @@
+{
+  "id": "/",
+  "name": "Reshma Textiles ERP",
+  "short_name": "Reshma ERP",
+  "description": "Private owner workspace for Reshma Textiles business management.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#f5f6f8",
+  "theme_color": "#29232b",
+  "icons": [
+    {
+      "src": "/app-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
