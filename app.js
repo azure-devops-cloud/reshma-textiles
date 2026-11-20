@@ -187,7 +187,7 @@ document.querySelector("#settingForm").addEventListener("submit",async e=>{e.pre
 document.querySelectorAll("[data-ops-tab]").forEach(b=>b.addEventListener("click",()=>{document.querySelectorAll("[data-ops-tab]").forEach(x=>x.classList.toggle("active",x===b));document.querySelectorAll("[data-ops-panel]").forEach(p=>p.hidden=p.dataset.opsPanel!==b.dataset.opsTab);if(b.dataset.opsTab==="settings")fillSettings()}));
 document.querySelector("#refreshOps").addEventListener("click",loadOps);
 businessBtn.addEventListener("click",()=>{businessWorkspace.hidden=false;businessWorkspace.scrollIntoView({behavior:"smooth",block:"start"});loadOps()});
-async function revealBusinessWorkspace(){if(!supabase)return;const {data:{user}}=await supabase.auth.getUser();if(!user)return;const {data:profile}=await supabase.from("profiles").select("role").eq("id",user.id).maybeSingle();if(profile?.role==="admin"){businessBtn.hidden=false;businessWorkspace.hidden=false;loadOps();}}
+async function revealBusinessWorkspace(){if(!supabase)return;const {data:{user}}=await supabase.auth.getUser();if(!user)return;const {data:profile}=await supabase.from("profiles").select("role").eq("id",user.id).maybeSingle();if(profile?.role==="admin")businessBtn.hidden=false;}
 if(supabase){supabase.auth.getSession().then(revealBusinessWorkspace);supabase.auth.onAuthStateChange((event)=>{if(["SIGNED_IN","INITIAL_SESSION","TOKEN_REFRESHED"].includes(event))setTimeout(revealBusinessWorkspace,250);if(event==="SIGNED_OUT"){businessBtn.hidden=true;businessWorkspace.hidden=true}})}
 
 document.querySelector("#purchaseOrderForm").addEventListener("submit",async e=>{e.preventDefault();const f=e.currentTarget;try{const qty=Number(val(f,"quantity")),cost=Number(val(f,"unit_cost")),rate=Number(val(f,"tax_rate")||0);if(qty<=0||cost<0||rate<0||rate>100)throw Error("Check quantity, unit cost and GST rate.");const {error}=await supabase.rpc("create_purchase_order",{p_supplier_id:val(f,"supplier_id"),p_po_number:val(f,"po_number")||null,p_order_date:val(f,"order_date")||null,p_expected_date:val(f,"expected_date")||null,p_material_id:val(f,"material_id"),p_quantity:qty,p_unit:val(f,"unit"),p_unit_cost:cost,p_tax_rate:rate,p_notes:val(f,"notes")||null});if(error)throw error;f.reset();setStatus("purchaseOrderStatus","Purchase order and item saved in one database transaction.");await loadOps()}catch(err){opsError("purchaseOrderStatus",err)}});
@@ -232,7 +232,8 @@ async function erpSignedIn(){
   const {data:{user},error:userError}=await supabase.auth.getUser();
   if(userError||!user){erpSignedOut();return}
   const {data:profile,error}=await supabase.from("profiles").select("role").eq("id",user.id).maybeSingle();
-  if(error||profile?.role!=="admin"){
+  if(error){erpSignedOut("We could not verify owner permissions. Please check your connection and try again.");return}
+  if(profile?.role!=="admin"){
     await supabase.auth.signOut();
     erpSignedOut("This account is not authorized for the owner workspace.");
     return;
