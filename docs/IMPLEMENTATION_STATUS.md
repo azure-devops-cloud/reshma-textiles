@@ -1,26 +1,40 @@
 # ERP Implementation Status
 
-## Baseline inspected
-- Existing static HTML/CSS/JavaScript storefront and admin workspace.
-- Existing Supabase project is active and contains core commerce, procurement, manufacturing, quality, invoice and ledger tables.
-- Existing RPCs: `post_goods_receipt`, `issue_production_material`, `complete_production_batch`, `post_sales_invoice`, `record_invoice_payment`.
-- Existing public website is reachable and the latest Vercel production deployment is READY.
-- Current ERP workspace code was being loaded twice from `app.js` and `business-ops.js`; branch `erp-phase-0-6` removes the duplicate module include.
+## Implemented on branch erp-phase-0-6
+- Phase 0: business workflow blueprint and acceptance checklist documented in docs/ERP_BLUEPRINT.md.
+- Phase 1: existing Supabase Auth/admin foundation retained; storefront and authenticated ERP remain separate; duplicate module loading and JavaScript parse error fixed.
+- Phase 2: supplier, PO and GRN workflows; PO creation and GRN posting now use atomic database functions; PO line received quantities and partial/full receipt states are tracked.
+- Phase 3: production batches, material issues, cost capture and configurable in-house/job-work operation routing with stage status updates.
+- Phase 4: existing quality-check completion flow remains; accepted output only is added to finished stock.
+- Phase 5: customers, quotations, invoice drafts/issue, payments and invoice dispatch tracking.
+- Phase 6: expense register, supplier bills/payments, receivables/payables, finance summaries and audit history.
+- Added database-side audit events for key procurement, inventory, production, sales and finance records. Audit events are read-only to application users.
+- New exposed tables have RLS enabled and admin-only policies. New payment/posting RPCs explicitly check admin access.
 
-## Data state observed (read-only inspection)
-- One profile exists.
-- Three raw-material master rows exist (names currently look like test placeholders); preserve them until the owner confirms whether they are test or real.
-- No supplier, purchase order, production batch, finished-goods invoice or product records were present at inspection.
-- Business settings indicate GST registered, but legal name, GSTIN, registered address and state code are not configured. Final tax invoice issuance must remain blocked until actual verified values are entered.
+## Verification performed
+- Supabase schema inspection confirms RLS enabled on all 8 new tables.
+- Rollback-only database integration test passed: PO creation, partial receipt, full receipt, over-receipt rejection, stock movement, audit trigger and PO status transitions. Test data was rolled back; no supplier/PO/GRN/expense/audit rows were left behind.
+- Rollback-only supplier payment test passed: payment balance updated and overpayment rejected. Test data was rolled back.
+- Rollback-only invoice validation test passed: final invoice issue is blocked when the business is GST-registered but verified seller legal name/GSTIN/address/state code are missing; no stock was deducted. Test data was rolled back.
+- JavaScript module syntax check passed.
+- Static HTML check: 149 IDs, no duplicate IDs, no missing static selector targets, and only one module script (app.js) is loaded.
+- Vercel generated a READY preview deployment for the branch. Vercel SSO protection prevents unauthenticated external inspection of the preview; production has not been changed.
 
-## Known gaps to close
-- Login issue reported by owner is not yet diagnosed; credentials are not available to test a real sign-in. Need the exact on-screen error if it persists after the duplicate module fix.
-- Purchase order and goods receipt UI currently use multiple client requests; consolidate document creation/posting into atomic database functions.
-- Add job-work operation routing, supplier bills/payables, expenses, dispatch against invoices, audit events and finance/reporting screens.
-- Review every RLS policy and RPC grant after schema additions.
-- Add automated checks for duplicate submission, stock reconciliation, invoice blocking and payment limits.
+## Existing live data preserved
+- One admin profile.
+- Three existing raw-material master records named Abc, Def, and Eee were left untouched; owner should confirm whether these are test labels or actual materials.
+- No supplier, purchase order, production batch, product, quotation, invoice or supplier-bill test data was retained.
+- Business settings show GST registered, but legal name, GSTIN, registered address and state code are blank. Final tax invoice issuance remains blocked until verified details are entered.
+
+## Remaining work before production approval
+- Owner must test sign-in with their real account. A real password was not available for automated login testing. The original JavaScript parse error that prevented the module from loading is fixed on this branch.
+- Initial ERP permissions remain admin-only. Configure staff roles and module-level permissions only after the actual staff list and responsibilities are known.
+- Add complete sales order/returns workflow, richer supplier-bill line matching, bank/cash ledger reconciliation, statutory accounting reports and payroll if required.
+- Review the existing Supabase security advisor warning: leaked-password protection is disabled. Enable it in Supabase Auth settings.
+- Existing database performance advisor still reports some pre-existing unindexed foreign keys and multiple permissive policies; new ERP foreign-key indexes have been added, but the remaining legacy findings should be reviewed before scale-up.
+- AI assistants are not yet connected to live business actions. Future AI remains recommendation-only until explicitly approved and separately permissioned.
 
 ## Deployment discipline
-- Work on `erp-phase-0-6` first; do not change the production storefront until branch verification is complete.
-- No sample business transactions, fake legal/tax identifiers or paid-plan upgrades.
-- Promote to production only after owner review and successful smoke tests.
+- Work remains on erp-phase-0-6; production storefront and main branch have not been changed.
+- No sample business transactions, fake legal/tax identifiers or paid-plan upgrades were added.
+- Merge/deploy only after owner review of the preview and confirmation of the three raw-material labels and actual factory process.
