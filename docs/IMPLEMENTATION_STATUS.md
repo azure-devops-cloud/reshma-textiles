@@ -1,6 +1,10 @@
 # ERP Implementation Status
 
 ## Implemented on branch erp-phase-0-6
+- ERP-only application shell: public storefront is no longer the entry experience; root route shows owner sign-in and authenticated ERP navigation.
+- Installable PWA foundation: manifest, branded SVG app icon, service worker shell caching, responsive mobile/desktop layout and install prompt.
+- Owner-only sign-in: sign-in only, no in-app account creation; application checks the authenticated user's admin profile before showing the ERP workspace.
+- Removed anonymous RLS policies for public product/category/variant reads and public enquiry submission. Verified no remaining public-role policies in the public schema.
 - Phase 0: business workflow blueprint and acceptance checklist documented in docs/ERP_BLUEPRINT.md.
 - Phase 1: existing Supabase Auth/admin foundation retained; storefront and authenticated ERP remain separate; duplicate module loading and JavaScript parse error fixed.
 - Phase 2: supplier, PO and GRN workflows; PO creation and GRN posting now use atomic database functions; PO line received quantities and partial/full receipt states are tracked.
