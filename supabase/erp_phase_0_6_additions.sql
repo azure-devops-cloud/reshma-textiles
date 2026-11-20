@@ -410,3 +410,39 @@ end;
 $$;
 revoke all on function public.create_and_post_goods_receipt(uuid,uuid,uuid,text,numeric,numeric,numeric,text) from public, anon;
 grant execute on function public.create_and_post_goods_receipt(uuid,uuid,uuid,text,numeric,numeric,numeric,text) to authenticated;
+create or replace function public.create_purchase_order(
+  p_supplier_id uuid,
+  p_po_number text,
+  p_order_date date,
+  p_expected_date date,
+  p_material_id uuid,
+  p_quantity numeric,
+  p_unit text,
+  p_unit_cost numeric,
+  p_tax_rate numeric default 0,
+  p_notes text default null
+) returns uuid
+language plpgsql
+set search_path='public'
+as $$
+declare v_id uuid; v_user uuid; v_taxable numeric; v_tax numeric; v_number text; v_material public.raw_materials%rowtype;
+begin
+  if not (select private.is_admin()) then raise exception 'Admin access required'; end if;
+  if p_quantity is null or p_quantity <= 0 or p_unit_cost is null or p_unit_cost < 0 or coalesce(p_tax_rate,0) not between 0 and 100 then
+    raise exception 'Check quantity, unit cost and tax rate';
+  end if;
+  if not exists(select 1 from public.suppliers where id=p_supplier_id and is_active=true) then raise exception 'Select an active supplier'; end if;
+  select * into v_material from public.raw_materials where id=p_material_id;
+  if not found then raise exception 'Select a valid raw material'; end if;
+  v_user:=auth.uid(); v_taxable:=p_quantity*p_unit_cost; v_tax:=v_taxable*coalesce(p_tax_rate,0)/100;
+  v_number:=coalesce(nullif(btrim(p_po_number),''),'PO-'||to_char(clock_timestamp(),'YYYYMMDDHH24MISSMS')||'-'||substr(gen_random_uuid()::text,1,4));
+  insert into public.purchase_orders(po_number,supplier_id,order_date,expected_date,status,subtotal,tax_amount,total_amount,notes,created_by)
+  values(v_number,p_supplier_id,coalesce(p_order_date,current_date),p_expected_date,'approved',v_taxable,v_tax,v_taxable+v_tax,p_notes,v_user)
+  returning id into v_id;
+  insert into public.purchase_order_items(purchase_order_id,material_id,item_description,quantity,unit,unit_cost,tax_rate,taxable_value,tax_amount,line_total)
+  values(v_id,p_material_id,v_material.name,p_quantity,coalesce(nullif(btrim(p_unit),''),v_material.unit),p_unit_cost,coalesce(p_tax_rate,0),v_taxable,v_tax,v_taxable+v_tax);
+  return v_id;
+end;
+$$;
+revoke all on function public.create_purchase_order(uuid,text,date,date,uuid,numeric,text,numeric,numeric,text) from public, anon;
+grant execute on function public.create_purchase_order(uuid,text,date,date,uuid,numeric,text,numeric,numeric,text) to authenticated;
