@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="theme-color" content="#20151b">
-<meta name="description" content="Reshma Textiles — thoughtfully made lungis for everyday comfort. Explore retail collections and wholesale supply across India.">
-<meta name="robots" content="index,follow">
+<meta name="description" content="Private Reshma Textiles business management ERP.">
+<meta name="robots" content="noindex,nofollow">
 <link rel="canonical" href="https://reshma-textiles.vercel.app/">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Reshma Textiles">
@@ -14,12 +14,28 @@
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="Reshma Textiles — Woven for Everyday">
 <meta name="twitter:description" content="Everyday lungi styles. Retail and wholesale enquiries across India.">
-<title>Reshma Textiles — Woven for Everyday</title>
+<title>Reshma Textiles ERP</title>
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="icon" href="/app-icon.svg" type="image/svg+xml">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Reshma ERP">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Playfair+Display:wght@500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="styles.css">
 </head>
-<body>
+<body class="erp-mode">
+<section id="erpLoginGate" class="erp-login-gate">
+  <div class="erp-login-brand"><span class="erp-brand-mark">R<span>T</span></span><div><strong>RESHMA TEXTILES</strong><small>BUSINESS MANAGEMENT ERP</small></div></div>
+  <div class="erp-login-card"><p class="erp-eyebrow">OWNER WORKSPACE</p><h1>Welcome <em>back.</em></h1><p class="erp-login-copy">Sign in to manage purchasing, manufacturing, inventory, sales and business finances.</p>
+    <form id="erpLoginForm" class="erp-login-form"><label>Email address<input name="email" type="email" autocomplete="username" required placeholder="Owner email"></label><label>Password<input name="password" type="password" autocomplete="current-password" required placeholder="Your password"></label><button type="submit" class="btn btn-dark" id="erpLoginSubmit">Sign in to ERP <span>↗</span></button><p id="erpLoginStatus" class="form-status" role="status" aria-live="polite"></p></form>
+    <div class="erp-login-foot"><span class="erp-lock">⌑</span> Private access · Owner account only</div>
+  </div><p class="erp-login-footer">RESHMA TEXTILES · PRIVATE BUSINESS SYSTEM</p>
+</section>
+<div id="erpAppShell" class="erp-app-shell" hidden>
+  <header class="erp-topbar"><button id="erpMobileMenu" class="erp-mobile-menu" type="button" aria-label="Open navigation">☰</button><div class="erp-top-brand"><span class="erp-brand-mark">R<span>T</span></span><div><strong>RESHMA</strong><small>TEXTILES ERP</small></div></div><div class="erp-top-meta"><span class="erp-secure-indicator">● OWNER SESSION</span><span id="erpOwnerEmail"></span><button id="erpSignOut" type="button" class="erp-signout">Sign out ↗</button></div></header>
+  <div class="erp-app-layout"><aside id="erpSidebar" class="erp-sidebar"><div class="erp-sidebar-label">WORKSPACE</div><button class="erp-nav-item active" data-erp-nav="overview" type="button"><span>◫</span> Overview</button><div class="erp-sidebar-label">OPERATIONS</div><button class="erp-nav-item" data-erp-nav="inventory" type="button"><span>▦</span> Inventory & procurement</button><button class="erp-nav-item" data-erp-nav="manufacturing" type="button"><span>⚙</span> Manufacturing</button><button class="erp-nav-item" data-erp-nav="sales" type="button"><span>↗</span> Sales & customers</button><div class="erp-sidebar-label">MANAGEMENT</div><button class="erp-nav-item" data-erp-nav="finance" type="button"><span>₹</span> Finance & reports</button><button class="erp-nav-item" data-erp-nav="audit" type="button"><span>≡</span> Audit trail</button><button class="erp-nav-item" data-erp-nav="settings" type="button"><span>⚙</span> Business settings</button><div class="erp-sidebar-bottom"><span class="erp-sidebar-dot"></span><div><strong>Database connected</strong><small>Private owner workspace</small></div></div></aside><main id="erpContentMount" class="erp-main"></main></div>
+</div>
 <div class="announcement"><span class="announcement-dot"></span> OWN BRAND · RETAIL & WHOLESALE · SHIPPING ENQUIRIES ACROSS INDIA <span class="announcement-right">EST. WITH CARE</span></div>
 <header class="site-header">
   <a class="brand" href="#" aria-label="Reshma Textiles home"><span class="brand-mark">R<span>T</span></span><span class="brand-copy"><strong>RESHMA</strong><small>TEXTILES · WOVEN FOR EVERYDAY</small></span></a>
