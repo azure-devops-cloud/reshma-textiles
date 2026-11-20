@@ -121,7 +121,7 @@ body.erp-mode [hidden]{display:none!important}
 .erp-sidebar-bottom strong,.erp-sidebar-bottom small{display:block;font-size:10px}
 .erp-sidebar-bottom small{color:#b2a8b0;margin-top:4px}
 .erp-main{min-width:0;padding:28px clamp(18px,3vw,42px);overflow:hidden}
-.erp-main .business-workspace{display:block!important;max-width:1500px;margin:0 auto;padding:0}
+.erp-main .business-workspace:not([hidden]){display:block!important;max-width:1500px;margin:0 auto;padding:0}.erp-main .business-workspace[hidden]{display:none!important}
 .erp-main .business-workspace>.admin-top{margin-bottom:22px}
 .erp-main .business-workspace>.admin-top h2{font-size:clamp(25px,3vw,34px);color:#29232b}
 .erp-main .ops-metrics{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:12px;margin:20px 0 24px}
