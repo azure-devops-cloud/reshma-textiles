@@ -1,9 +1,9 @@
 # Reshma Textiles
 
-Reshma Textiles is an own-brand lungi business. This repository contains the public storefront and an authenticated ERP workspace.
+Reshma Textiles is an own-brand lungi business. This repository contains a private, owner-authenticated ERP application. The public storefront is out of scope and the root route opens the ERP sign-in screen.
 
 ## Stack
-- Static HTML, CSS and JavaScript (no build step)
+- Installable Progressive Web App (PWA), static HTML/CSS/JavaScript (no build step)
 - Supabase PostgreSQL, Auth and Row Level Security
 - Vercel deployment (commercial-use terms must be checked before production use)
 
@@ -17,9 +17,9 @@ Reshma Textiles is an own-brand lungi business. This repository contains the pub
 - Supplier bills/payables, expenses, finance summaries and audit trail
 
 ## Repository layout
-- index.html — storefront, account dialog and ERP screens
-- styles.css — responsive brand and ERP styling
-- app.js — Supabase authentication, storefront, admin and ERP workflows
+- index.html — private ERP sign-in and application shell
+- styles.css — responsive ERP application styling
+- app.js — owner authentication, PWA navigation and ERP workflows
 - supabase/schema.sql — original database foundation
 - supabase/policies.sql — original grants and row-level security policies
 - supabase/erp_phase_0_6_additions.sql — additive ERP schema and database functions
@@ -29,10 +29,10 @@ Reshma Textiles is an own-brand lungi business. This repository contains the pub
 ## Supabase configuration
 The browser uses only the project's public publishable key. Never place a Supabase secret or service-role key in client code.
 
-The current project URL and publishable key are configured in index.html. For a different Supabase project, update window.RESHMA_CONFIG with that project's URL and publishable key.
+The current project URL and publishable key are configured in index.html. The browser uses only the publishable key; never place a secret or service-role key in client code.
 
 To bootstrap the first trusted administrator:
-1. Create the account using the website Account dialog.
+1. The owner account is provisioned separately in Supabase Auth; the app exposes sign-in only and does not offer public account creation.
 2. In Supabase SQL Editor, set the exact Auth user UUID to admin:
    `update public.profiles set role = 'admin' where id = '<AUTH_USER_UUID>';`
 3. Sign in again to refresh the session and load the private ERP workspace.
@@ -51,3 +51,13 @@ All business tables are protected by RLS. ERP operations are currently admin-onl
 - Production main branch has not been changed as part of this implementation.
 - Preview deployments may be protected by Vercel SSO.
 - Before production launch, verify the hosting plan's commercial-use terms. Vercel Hobby is intended for personal/non-commercial use.
+
+
+## Owner-only ERP app
+- The root route opens the owner sign-in page; there is no public catalogue, shopping cart or public enquiry workflow.
+- The first authorized account must have `profiles.role = 'admin'`. The UI rejects other signed-in accounts.
+- Suppliers, customers and employees are business records only. They do not receive login access in the initial release.
+- Navigation is app-style and responsive; the manifest and service worker provide install support on compatible Android and desktop browsers.
+- The service worker caches only the static app shell. Live ERP data and sign-in still require a network connection.
+- Public anonymous policies for product/catalogue reads and customer enquiry submissions were removed. ERP business tables remain protected by admin-only RLS.
+- Existing Supabase/Vercel hosting plans and commercial-use terms must be reviewed before commercial production use.
