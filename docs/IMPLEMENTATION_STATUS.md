@@ -42,3 +42,14 @@
 - Work remains on erp-phase-0-6; production storefront and main branch have not been changed.
 - No sample business transactions, fake legal/tax identifiers or paid-plan upgrades were added.
 - Merge/deploy only after owner review of the preview and confirmation of the three raw-material labels and actual factory process.
+
+
+## Owner-only PWA milestone verification (2026-11-20)
+- Root route now serves an owner sign-in experience and app-style ERP shell; the previous public storefront is hidden from the user experience and page metadata is noindex.
+- The ERP shell uses the existing business workspace and module tabs; navigation is adapted for mobile and desktop.
+- PWA manifest, SVG icon and service worker are committed. The service worker caches the static shell only; authenticated database workflows require connectivity.
+- Owner login checks the authenticated user's `profiles.role` and only admits `admin`. The application no longer offers account registration.
+- Removed anonymous policies for public product, category and variant reads and anonymous customer enquiry inserts. A fresh `pg_policies` query confirmed no remaining policies granted to the `anon` role in the public schema.
+- Supabase security advisor still warns that leaked-password protection is disabled. Performance advisor reports 16 unindexed foreign keys and existing multiple-permissive-policy findings; these are tracked for a separate database tuning pass.
+- Vercel status checks for the latest ERP branch commit report success for both connected project checks. The preview has not yet been visually inspected with the owner's authenticated session.
+- Real owner sign-in remains untested because the owner's password is not available to the development process. No production merge or production deployment was requested or performed.
