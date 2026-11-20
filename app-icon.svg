@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+<rect width="512" height="512" rx="112" fill="#51283a"/>
+<path d="M108 112h296v42H108z" fill="#d9b77e" opacity=".95"/>
+<text x="256" y="310" text-anchor="middle" font-family="Georgia,serif" font-size="210" font-weight="700" fill="#fff">R</text>
+<text x="330" y="370" text-anchor="middle" font-family="Georgia,serif" font-size="118" font-weight="700" fill="#d9b77e">T</text>
+<path d="M108 400h296v10H108z" fill="#d9b77e" opacity=".8"/>
+</svg>
