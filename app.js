@@ -22,7 +22,7 @@ async function checkAdmin(){
  adminReady=!error&&profile?.role==="admin";
  adminLink.hidden=!adminReady;
  if(!adminReady){adminPanel.hidden=true;productManager.hidden=true;return}
- adminPanel.hidden=false;productManager.hidden=false;await Promise.all([loadEnquiries(),loadAdminProducts()]);
+ adminPanel.hidden=true;productManager.hidden=true;await loadAdminProducts();
 }
 async function loadEnquiries(){
  if(!adminReady)return;
@@ -62,7 +62,7 @@ async function loadAdminProducts(){
  const{data,error}=await supabase.from("products").select("id,name,slug,sku,fabric,design,description,image_url,retail_price,wholesale_price,min_wholesale_qty,is_active,created_at").order("created_at",{ascending:false}).limit(200);
  if(error){productAdminStatus.textContent="Could not load products. Check your admin session.";console.error(error);return}
  adminProducts=data||[];productAdminStatus.textContent=adminProducts.length+" products loaded.";
- adminProductList.innerHTML=adminProducts.length?adminProducts.map(p=>'<article class="admin-product-card"><div><span class="status-pill '+(p.is_active?"status-converted":"status-closed")+'">'+(p.is_active?"Published":"Draft")+'</span><h3>'+esc(p.name)+'</h3><p>'+esc([p.sku,p.fabric,p.design].filter(Boolean).join(" · ")||"No product code or details")+'</p><small>Retail ₹'+Number(p.retail_price||0).toLocaleString("en-IN")+' · Wholesale ₹'+Number(p.wholesale_price||0).toLocaleString("en-IN")+' · Min. '+esc(p.min_wholesale_qty)+' pcs</small></div><div class="admin-product-actions"><button class="text-link" type="button" data-product-edit="'+esc(p.id)+'">Edit</button><button class="text-link" type="button" data-product-toggle="'+esc(p.id)+'">'+(p.is_active?"Unpublish":"Publish")+'</button></div></article>').join(""):'<div class="admin-empty">No products added yet. Use the form above to create your first product.</div>';
+ adminProductList.innerHTML=adminProducts.length?adminProducts.map(p=>'<article class="admin-product-card"><div><span class="status-pill '+(p.is_active?"status-converted":"status-closed")+'">'+(p.is_active?"Active":"Inactive")+'</span><h3>'+esc(p.name)+'</h3><p>'+esc([p.sku,p.fabric,p.design].filter(Boolean).join(" · ")||"No product code or details")+'</p><small>Retail ₹'+Number(p.retail_price||0).toLocaleString("en-IN")+' · Wholesale ₹'+Number(p.wholesale_price||0).toLocaleString("en-IN")+' · Min. '+esc(p.min_wholesale_qty)+' pcs</small></div><div class="admin-product-actions"><button class="text-link" type="button" data-product-edit="'+esc(p.id)+'">Edit</button><button class="text-link" type="button" data-product-toggle="'+esc(p.id)+'">'+(p.is_active?"Deactivate":"Activate")+'</button></div></article>').join(""):'<div class="admin-empty">No products added yet. Use the form above to create your first product.</div>';
 }
 function resetProductForm(){productForm.reset();productForm.elements.id.value="";productForm.elements.retail_price.value="0";productForm.elements.wholesale_price.value="0";productForm.elements.min_wholesale_qty.value="10";document.querySelector("#saveProductBtn").textContent="Save product";document.querySelector("#cancelProductEdit").hidden=true}
 productForm.addEventListener("submit",async e=>{
@@ -220,10 +220,12 @@ const erpLoginSubmit=document.querySelector("#erpLoginSubmit");
 const erpSidebar=document.querySelector("#erpSidebar");
 const erpMount=document.querySelector("#erpContentMount");
 if(businessWorkspace&&erpMount)erpMount.appendChild(businessWorkspace);
+if(productManager&&erpMount)erpMount.appendChild(productManager);
 function erpSignedOut(message=""){
   erpLoginGate.hidden=false;
   erpAppShell.hidden=true;
   businessWorkspace.hidden=true;
+  productManager.hidden=true;
   document.querySelector("#erpOwnerEmail").textContent="";
   if(message)erpLoginStatus.textContent=message;
 }
@@ -241,6 +243,7 @@ async function erpSignedIn(){
   erpLoginGate.hidden=true;
   erpAppShell.hidden=false;
   businessWorkspace.hidden=false;
+  productManager.hidden=true;
   document.querySelector("#erpOwnerEmail").textContent=user.email||"Owner";
   document.querySelector("#businessBtn").hidden=false;
   await loadOps();
@@ -267,8 +270,8 @@ document.querySelector("#erpSignOut").addEventListener("click",async()=>{
 document.querySelectorAll("[data-erp-nav]").forEach(button=>button.addEventListener("click",()=>{
   const target=button.dataset.erpNav;
   document.querySelectorAll("[data-erp-nav]").forEach(item=>item.classList.toggle("active",item===button));
-  const tab=document.querySelector('[data-ops-tab="'+target+'"]');
-  if(tab)tab.click();
+  if(target==="products"){businessWorkspace.hidden=true;productManager.hidden=false;loadAdminProducts();}
+  else{productManager.hidden=true;businessWorkspace.hidden=false;const tab=document.querySelector('[data-ops-tab="'+target+'"]');if(tab)tab.click();}
   erpSidebar.classList.remove("is-open");
   window.scrollTo({top:0,behavior:"smooth"});
 }));
