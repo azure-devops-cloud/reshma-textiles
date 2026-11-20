@@ -284,3 +284,129 @@ drop trigger if exists audit_raw_material_movements on public.raw_material_movem
 create trigger audit_raw_material_movements after insert or update or delete on public.raw_material_movements for each row execute function private.audit_business_row();
 drop trigger if exists audit_inventory_movements on public.inventory_movements;
 create trigger audit_inventory_movements after insert or update or delete on public.inventory_movements for each row execute function private.audit_business_row();
+
+-- Phase 2 controls: receipt quantities are tracked against each PO line.
+alter table public.purchase_order_items add column if not exists received_quantity numeric(12,3) not null default 0;
+create unique index if not exists purchase_order_items_po_material_uq on public.purchase_order_items(purchase_order_id, material_id);
+do $$
+begin
+  if not exists(select 1 from pg_constraint where conname='purchase_order_items_received_quantity_check' and conrelid='public.purchase_order_items'::regclass) then
+    alter table public.purchase_order_items add constraint purchase_order_items_received_quantity_check check(received_quantity >= 0 and received_quantity <= quantity);
+  end if;
+  if not exists(select 1 from pg_constraint where conname='production_batch_operations_completed_quantity_check' and conrelid='public.production_batch_operations'::regclass) then
+    alter table public.production_batch_operations add constraint production_batch_operations_completed_quantity_check check(completed_quantity <= planned_quantity);
+  end if;
+  if not exists(select 1 from pg_constraint where conname='supplier_bills_total_matches_components' and conrelid='public.supplier_bills'::regclass) then
+    alter table public.supplier_bills add constraint supplier_bills_total_matches_components check(abs(total_amount - subtotal - tax_amount) <= 0.01);
+  end if;
+  if not exists(select 1 from pg_constraint where conname='goods_receipt_items_rejected_within_received' and conrelid='public.goods_receipt_items'::regclass) then
+    alter table public.goods_receipt_items add constraint goods_receipt_items_rejected_within_received check(rejected_quantity <= received_quantity and accepted_quantity + rejected_quantity = received_quantity);
+  end if;
+end $$;
+
+create or replace function public.create_purchase_order(
+  p_supplier_id uuid,
+  p_po_number text,
+  p_order_date date,
+  p_expected_date date,
+  p_material_id uuid,
+  p_quantity numeric,
+  p_unit text,
+  p_unit_cost numeric,
+  p_tax_rate numeric default 0,
+  p_notes text default null
+) returns uuid
+language plpgsql
+set search_path='public'
+as $$
+declare v_id uuid; v_user uuid; v_taxable numeric; v_tax numeric; v_number text;
+begin
+  if not (select private.is_admin()) then raise exception 'Admin access required'; end if;
+  if p_quantity is null or p_quantity <= 0 or p_unit_cost is null or p_unit_cost < 0 or coalesce(p_tax_rate,0) not between 0 and 100 then
+    raise exception 'Check quantity, unit cost and tax rate';
+  end if;
+  if not exists(select 1 from public.suppliers where id=p_supplier_id and is_active=true) then raise exception 'Select an active supplier'; end if;
+  if not exists(select 1 from public.raw_materials where id=p_material_id) then raise exception 'Select a valid raw material'; end if;
+  v_user:=auth.uid(); v_taxable:=p_quantity*p_unit_cost; v_tax:=v_taxable*coalesce(p_tax_rate,0)/100;
+  v_number:=coalesce(nullif(btrim(p_po_number),''),'PO-'||to_char(clock_timestamp(),'YYYYMMDDHH24MISSMS')||'-'||substr(gen_random_uuid()::text,1,4));
+  insert into public.purchase_orders(po_number,supplier_id,order_date,expected_date,status,subtotal,tax_amount,total_amount,notes,created_by)
+  values(v_number,p_supplier_id,coalesce(p_order_date,current_date),p_expected_date,'approved',v_taxable,v_tax,v_taxable+v_tax,p_notes,v_user)
+  returning id into v_id;
+  insert into public.purchase_order_items(purchase_order_id,material_id,quantity,unit,unit_cost,tax_rate,taxable_value,tax_amount,line_total)
+  values(v_id,p_material_id,p_quantity,p_unit,p_unit_cost,coalesce(p_tax_rate,0),v_taxable,v_tax,v_taxable+v_tax);
+  return v_id;
+end;
+$$;
+revoke all on function public.create_purchase_order(uuid,text,date,date,uuid,numeric,text,numeric,numeric,text) from public, anon;
+grant execute on function public.create_purchase_order(uuid,text,date,date,uuid,numeric,text,numeric,numeric,text) to authenticated;
+
+create or replace function public.post_goods_receipt(p_receipt_id uuid)
+returns void
+language plpgsql
+set search_path='public'
+as $$
+declare r public.goods_receipts%rowtype; po public.purchase_orders%rowtype; i record;
+begin
+  if not (select private.is_admin()) then raise exception 'Admin access required'; end if;
+  select * into r from public.goods_receipts where id=p_receipt_id for update;
+  if not found then raise exception 'Goods receipt not found'; end if;
+  if r.status <> 'draft' then raise exception 'Only draft receipts can be posted'; end if;
+  if not exists(select 1 from public.goods_receipt_items where goods_receipt_id=p_receipt_id and accepted_quantity>0) then raise exception 'Add accepted material quantities before posting'; end if;
+  if r.purchase_order_id is not null then
+    select * into po from public.purchase_orders where id=r.purchase_order_id for update;
+    if not found or po.status not in ('approved','part_received') then raise exception 'Purchase order is not open for receipt'; end if;
+    if po.supplier_id <> r.supplier_id then raise exception 'Receipt supplier does not match the purchase order'; end if;
+  end if;
+  for i in select * from public.goods_receipt_items where goods_receipt_id=p_receipt_id and accepted_quantity>0 loop
+    if r.purchase_order_id is not null then
+      update public.purchase_order_items
+      set received_quantity=received_quantity+i.accepted_quantity
+      where purchase_order_id=r.purchase_order_id and material_id=i.material_id and received_quantity+i.accepted_quantity<=quantity;
+      if not found then raise exception 'Accepted quantity exceeds the remaining purchase order quantity for this material'; end if;
+    end if;
+    update public.raw_materials set current_stock=current_stock+i.accepted_quantity,unit_cost=i.unit_cost where id=i.material_id;
+    insert into public.raw_material_movements(material_id,quantity_change,unit_cost,movement_type,reference_type,reference_id,created_by)
+    values(i.material_id,i.accepted_quantity,i.unit_cost,'purchase_receipt','goods_receipt',p_receipt_id,auth.uid());
+  end loop;
+  update public.goods_receipts set status='posted',posted_at=now() where id=p_receipt_id;
+  if r.purchase_order_id is not null then
+    update public.purchase_orders
+    set status=case when exists(select 1 from public.purchase_order_items where purchase_order_id=r.purchase_order_id and received_quantity<quantity) then 'part_received' else 'received' end,
+        updated_at=now()
+    where id=r.purchase_order_id;
+  end if;
+end;
+$$;
+revoke all on function public.post_goods_receipt(uuid) from public, anon;
+grant execute on function public.post_goods_receipt(uuid) to authenticated;
+
+create or replace function public.create_and_post_goods_receipt(
+  p_supplier_id uuid,
+  p_purchase_order_id uuid,
+  p_material_id uuid,
+  p_supplier_invoice_number text,
+  p_received_quantity numeric,
+  p_accepted_quantity numeric,
+  p_unit_cost numeric,
+  p_notes text default null
+) returns uuid
+language plpgsql
+set search_path='public'
+as $$
+declare v_id uuid;
+begin
+  if not (select private.is_admin()) then raise exception 'Admin access required'; end if;
+  if p_received_quantity is null or p_received_quantity<=0 or p_accepted_quantity is null or p_accepted_quantity<0 or p_accepted_quantity>p_received_quantity or p_unit_cost is null or p_unit_cost<0 then
+    raise exception 'Check received quantity, accepted quantity and unit cost';
+  end if;
+  insert into public.goods_receipts(grn_number,purchase_order_id,supplier_id,receipt_date,supplier_invoice_number,status,notes,created_by)
+  values('GRN-'||to_char(clock_timestamp(),'YYYYMMDDHH24MISSMS')||'-'||substr(gen_random_uuid()::text,1,4),p_purchase_order_id,p_supplier_id,current_date,nullif(btrim(p_supplier_invoice_number),''),'draft',p_notes,auth.uid())
+  returning id into v_id;
+  insert into public.goods_receipt_items(goods_receipt_id,material_id,received_quantity,accepted_quantity,rejected_quantity,unit_cost)
+  values(v_id,p_material_id,p_received_quantity,p_accepted_quantity,p_received_quantity-p_accepted_quantity,p_unit_cost);
+  perform public.post_goods_receipt(v_id);
+  return v_id;
+end;
+$$;
+revoke all on function public.create_and_post_goods_receipt(uuid,uuid,uuid,text,numeric,numeric,numeric,text) from public, anon;
+grant execute on function public.create_and_post_goods_receipt(uuid,uuid,uuid,text,numeric,numeric,numeric,text) to authenticated;
