@@ -38,8 +38,12 @@ begin
   update public.goods_receipts set status='posted',posted_at=now() where id=p_receipt_id;
   if r.purchase_order_id is not null then
     update public.purchase_orders
-    set status=case when exists(select 1 from public.purchase_order_items where purchase_order_id=r.purchase_order_id and received_quantity<quantity) then 'part_received' else 'received' end,
-        updated_at=now()
+    set status=case
+      when not exists(select 1 from public.purchase_order_items where purchase_order_id=r.purchase_order_id and received_quantity>0) then 'approved'
+      when exists(select 1 from public.purchase_order_items where purchase_order_id=r.purchase_order_id and received_quantity<quantity) then 'part_received'
+      else 'received'
+    end,
+    updated_at=now()
     where id=r.purchase_order_id;
   end if;
 end;
